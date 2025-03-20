@@ -26,17 +26,17 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'github-token4', variable: 'GITHUB_TOKEN')]) {
                     script {
-                        def response = sh(script: """
-                        curl -X POST -H "Authorization: token $GITHUB_TOKEN" \\
-                            -H "Accept: application/vnd.github.v3+json" \\
+                        def response = sh(script: '''
+                        curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+                            -H "Accept: application/vnd.github.v3+json" \
                             -d '{
-                                "title": "Automated PR from ${BRANCH_NAME}",
-                                "head": "${BRANCH_NAME}",
+                                "title": "Automated PR from '"$BRANCH_NAME"'",
+                                "head": "'"$BRANCH_NAME"'",
                                 "base": "main",
                                 "body": "This is an automated PR created by Jenkins."
-                            }' \\
+                            }' \
                             "https://api.github.com/repos/$REPO/pulls"
-                        """, returnStdout: true).trim()
+                        ''', returnStdout: true).trim()
 
                         echo "GitHub API Response: ${response}"
                     }
