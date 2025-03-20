@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Create Pull Request') {
             steps {
-                withCredentials([string(credentialsId: 'github-username-and-pat', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github-token4', variable: 'GITHUB_TOKEN')]) {
                     sh '''
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
                          -H "Accept: application/vnd.github.v3+json" \
