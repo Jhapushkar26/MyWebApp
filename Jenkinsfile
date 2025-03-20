@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_TOKEN = credentials('github-token')  // Store GitHub Token in Jenkins Credentials
+        GITHUB_TOKEN = credentials('github-username-and-pat')  // Store GitHub Token in Jenkins Credentials
         GITHUB_REPO = 'Jhapushkar26/MyWebApp'      // Change this to your repo
         TARGET_BRANCH = 'main'                     // Change to your main branch name
     }
