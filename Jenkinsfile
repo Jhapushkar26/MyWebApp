@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        GITHUB_TOKEN = credentials('github-username-and-pat')
+        GITHUB_TOKEN = credentials('github-token')
         REPO = 'Jhapushkar26/MyWebApp'
     }
     stages {
