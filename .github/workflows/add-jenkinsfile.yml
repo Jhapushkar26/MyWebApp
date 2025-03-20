@@ -1,0 +1,23 @@
+name: Add Jenkinsfile to New Branches
+on:
+  create:
+    branches:
+      - '*'
+
+jobs:
+  add-jenkinsfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check if Jenkinsfile exists
+        run: |
+          if [ ! -f Jenkinsfile ]; then
+            git checkout main -- Jenkinsfile
+            git add Jenkinsfile
+            git commit -m "Auto-adding Jenkinsfile to new branch"
+            git push origin HEAD
+          else
+            echo "Jenkinsfile already exists"
+          fi
