@@ -2,8 +2,9 @@ pipeline {
     agent any
 
     environment {
-        GITHUB_REPO = "your-username/your-repo"  // Replace with your GitHub repo
-        GITHUB_TOKEN = credentials('github-token') // Use a Jenkins credential ID for GitHub token
+        GITHUB_TOKEN = credentials('github-token')  // Store GitHub Token in Jenkins Credentials
+        GITHUB_REPO = 'Jhapushkar26/MyWebApp'      // Change this to your repo
+        TARGET_BRANCH = 'main'                     // Change to your main branch name
     }
 
     stages {
@@ -11,54 +12,33 @@ pipeline {
             steps {
                 script {
                     def branchName = env.BRANCH_NAME
-                    if (branchName != 'main') {
+                    if (branchName != TARGET_BRANCH) {
                         echo "New branch detected: ${branchName}"
+                        createPullRequest(branchName)
                     } else {
-                        echo "Skipping main branch"
-                        currentBuild.result = 'ABORTED'
-                        error("Exiting build: Main branch does not need PR")
+                        echo "Not creating PR for the main branch."
                     }
-                }
-            }
-        }
-
-        stage('Push Branch to GitHub') {
-            steps {
-                script {
-                    echo "Pushing new branch ${env.BRANCH_NAME} to GitHub"
-                    sh """
-                    git remote add github https://github.com/${GITHUB_REPO}.git
-                    git push github ${env.BRANCH_NAME}
-                    """
-                }
-            }
-        }
-
-        stage('Create Pull Request') {
-            steps {
-                script {
-                    def branchName = env.BRANCH_NAME
-                    def targetBranch = 'main'
-
-                    echo "Creating Pull Request from ${branchName} to ${targetBranch} in GitHub"
-
-                    def payload = """
-                    {
-                        "title": "Auto-created PR for ${branchName}",
-                        "head": "${branchName}",
-                        "base": "${targetBranch}",
-                        "body": "This PR was automatically created by Jenkins"
-                    }
-                    """
-
-                    sh """
-                    curl -X POST -H "Authorization: token ${GITHUB_TOKEN}" \\
-                        -H "Accept: application/vnd.github.v3+json" \\
-                        -d '${payload}' \\
-                        https://api.github.com/repos/${GITHUB_REPO}/pulls
-                    """
                 }
             }
         }
     }
+}
+
+def createPullRequest(String branchName) {
+    def prTitle = "Auto PR: Merging ${branchName} into ${env.TARGET_BRANCH}"
+    def prBody = "This PR was automatically created by Jenkins."
+
+    def response = sh(script: """
+        curl -X POST -H "Authorization: token ${env.GITHUB_TOKEN}" \
+        -H "Accept: application/vnd.github.v3+json" \
+        https://api.github.com/repos/${env.GITHUB_REPO}/pulls \
+        -d '{
+            "title": "${prTitle}",
+            "head": "${branchName}",
+            "base": "${env.TARGET_BRANCH}",
+            "body": "${prBody}"
+        }'
+    """, returnStdout: true).trim()
+
+    echo "GitHub API Response: ${response}"
 }
