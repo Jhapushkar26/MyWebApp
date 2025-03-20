@@ -31,8 +31,9 @@ pipeline {
             steps {
                 script {
                     def branchName = env.BRANCH_NAME
-                    if (branchName != 'main') {
+                    if (branchName != TARGET_BRANCH) {
                         echo "New branch detected: ${branchName}"
+                        createPullRequest(branchName)
                     } else {
                         echo "Skipping main branch"
                         currentBuild.result = 'ABORTED'
