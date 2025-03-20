@@ -2,31 +2,9 @@ pipeline {
     agent any
     environment {
         REPO = 'Jhapushkar26/MyWebApp'
-        BRANCH_NAME = 'feature-new-branch4'  // Ensure branch is explicitly set
+        BASE_BRANCH = 'main'
     }
     stages {
-        stage('Ensure Jenkinsfile Exists') {
-            steps {
-                script {
-                    def jenkinsfileExists = sh(script: "git ls-remote --heads origin ${BRANCH_NAME} | wc -l", returnStdout: true).trim()
-
-                    if (jenkinsfileExists == '0') {
-                        echo "⚠️ Jenkinsfile missing in branch ${BRANCH_NAME}. Adding it now..."
-                        sh '''
-                        git fetch origin
-                        git checkout ${BRANCH_NAME}
-                        git restore --source=main -- Jenkinsfile  # Modern approach instead of `checkout main -- Jenkinsfile`
-                        git add Jenkinsfile
-                        git commit -m "Auto-adding Jenkinsfile to ${BRANCH_NAME}"
-                        git push origin ${BRANCH_NAME}
-                        '''
-                    } else {
-                        echo "✅ Jenkinsfile already exists in branch ${BRANCH_NAME}. No action needed."
-                    }
-                }
-            }
-        }
-
         stage('Create Pull Request') {
             steps {
                 withCredentials([string(credentialsId: 'github-token4', variable: 'GITHUB_TOKEN')]) {
@@ -38,7 +16,7 @@ pipeline {
                             -d '{
                                 "title": "Automated PR from '"$BRANCH_NAME"'",
                                 "head": "'"$BRANCH_NAME"'",
-                                "base": "main",
+                                "base": "'"$BASE_BRANCH"'",
                                 "body": "This is an automated PR created by Jenkins."
                             }' \
                             "https://api.github.com/repos/$REPO/pulls")
@@ -50,7 +28,7 @@ pipeline {
                         echo "HTTP Status Code: $http_status"
 
                         if [ "$http_status" -eq 422 ]; then
-                            echo "⚠️ Pull request already exists for ${BRANCH_NAME}. Skipping PR creation."
+                            echo "⚠️ A pull request already exists for this branch. Skipping PR creation."
                             exit 0
                         elif [ "$http_status" -ne 201 ]; then
                             echo "❌ Error: Failed to create PR!"
