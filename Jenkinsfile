@@ -13,6 +13,8 @@ pipeline {
                             error "❌ ERROR: BRANCH_NAME is not set! Ensure this pipeline is triggered by a branch."
                         }
 
+                        echo "ℹ️ BRANCH_NAME: ${env.BRANCH_NAME}"
+
                         def response = sh(script: '''
                         set -x  # Debugging enabled
 
@@ -32,7 +34,9 @@ pipeline {
                         http_status=$(echo "$response" | grep "HTTP_STATUS" | awk -F: '{print $2}')
                         api_response=$(echo "$response" | sed -e 's/HTTP_STATUS:[0-9]*//')
 
-                        echo "ℹ️ GitHub API Response: $api_response"
+                        echo "🔍 Full GitHub API Response:"
+                        echo "$response"
+
                         echo "ℹ️ HTTP Status Code: $http_status"
 
                         if [ "$http_status" -eq 422 ]; then
