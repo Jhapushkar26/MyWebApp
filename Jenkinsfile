@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        GITHUB_TOKEN = credentials('github-token') // Store GitHub token in Jenkins credentials
+        GITHUB_TOKEN = credentials('github-username-and-pat') // Store GitHub token in Jenkins credentials
         REPO = 'Jhapushkar26/MyWebApp' // Your repository name
     }
     stages {
