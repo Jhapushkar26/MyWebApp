@@ -9,7 +9,15 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'github-token4', variable: 'GITHUB_TOKEN')]) {
                     script {
+                        if (!env.BRANCH_NAME) {
+                            error "❌ ERROR: BRANCH_NAME is not set! Ensure this pipeline is triggered by a branch."
+                        }
+
                         def response = sh(script: '''
+                        set -x  # Debugging enabled
+
+                        echo "ℹ️ Checking if a pull request already exists for branch: $BRANCH_NAME"
+
                         response=$(curl -s -w "\\nHTTP_STATUS:%{http_code}" -X POST \
                             -H "Authorization: token $GITHUB_TOKEN" \
                             -H "Accept: application/vnd.github.v3+json" \
@@ -24,19 +32,21 @@ pipeline {
                         http_status=$(echo "$response" | grep "HTTP_STATUS" | awk -F: '{print $2}')
                         api_response=$(echo "$response" | sed -e 's/HTTP_STATUS:[0-9]*//')
 
-                        echo "GitHub API Response: $api_response"
-                        echo "HTTP Status Code: $http_status"
+                        echo "ℹ️ GitHub API Response: $api_response"
+                        echo "ℹ️ HTTP Status Code: $http_status"
 
                         if [ "$http_status" -eq 422 ]; then
                             echo "⚠️ A pull request already exists for this branch. Skipping PR creation."
                             exit 0
                         elif [ "$http_status" -ne 201 ]; then
-                            echo "❌ Error: Failed to create PR!"
+                            echo "❌ ERROR: Failed to create PR!"
                             exit 1
+                        else
+                            echo "✅ Pull request created successfully!"
                         fi
                         ''', returnStdout: true).trim()
 
-                        echo "Final GitHub API Response: ${response}"
+                        echo "📢 Final GitHub API Response: ${response}"
                     }
                 }
             }
