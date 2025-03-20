@@ -26,14 +26,14 @@ pipeline {
                 withCredentials([string(credentialsId: 'github-token4', variable: 'GITHUB_TOKEN')]) {
                     sh '''
                     curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
-                         -H "Accept: application/vnd.github.v3+json" \
-                         -d '{
-                               "title": "Automated PR from '${BRANCH_NAME}'",
-                               "head": "'${BRANCH_NAME}'",
-                               "base": "main",
-                               "body": "This is an automated PR created by Jenkins."
-                             }' \
-                         https://api.github.com/repos/$REPO/pulls
+                        -H "Accept: application/vnd.github.v3+json" \
+                        -d '{
+                            "title": "Automated PR from '"$BRANCH_NAME"'",
+                            "head": "'"$BRANCH_NAME"'",
+                            "base": "main",
+                            "body": "This is an automated PR created by Jenkins."
+                            }' \
+                        https://api.github.com/repos/$REPO/pulls
                     '''
                 }
             }
