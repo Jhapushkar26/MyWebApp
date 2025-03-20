@@ -1,18 +1,22 @@
 pipeline {
     agent any
     environment {
-        GITHUB_TOKEN = credentials('github-username-and-pat') // Store GitHub token in Jenkins credentials
-        REPO = 'Jhapushkar26/MyWebApp' // Your repository name
+        GITHUB_TOKEN = credentials('github-token')
+        REPO = 'Jhapushkar26/MyWebApp'
     }
     stages {
-        stage('Create Pull Request') {
+        stage('Ensure Jenkinsfile Exists') {
             steps {
                 script {
                     def branchName = env.BRANCH_NAME
-                    if (branchName != 'main' && branchName != 'master') { // Ensure it's not main
+                    def jenkinsfileExists = sh(script: "git ls-remote --exit-code origin ${branchName}:Jenkinsfile || echo 'missing'", returnStdout: true).trim()
+                    
+                    if (jenkinsfileExists == 'missing') {
                         sh """
-                        gh auth login --with-token <<< \$GITHUB_TOKEN
-                        gh pr create --base main --head ${branchName} --title 'New PR from ${branchName}' --body 'Automated PR creation'
+                        git checkout main -- Jenkinsfile
+                        git add Jenkinsfile
+                        git commit -m 'Auto-adding Jenkinsfile to ${branchName}'
+                        git push origin ${branchName}
                         """
                     }
                 }
