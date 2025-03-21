@@ -6,7 +6,6 @@ pipeline {
         GITHUB_USER = 'Jhapushkar26'
         GITHUB_TOKEN = credentials('github-username-and-pat')
         SONARQUBE_URL = 'http://localhost:9000'
-        SONARQUBE_CREDENTIALS = 'sonarqube-token-new'
     }
 
     stages {
@@ -18,13 +17,13 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-               withSonarQubeEnv('SonarQube') {
+                withSonarQubeEnv('SonarQube') {
                     withCredentials([string(credentialsId: 'sonarqube-token-new', variable: 'SONAR_TOKEN')]) {
-                        bat """
-                        sonar-scanner -Dsonar.projectKey=MyProject -Dsonar.sources=. \
-                                      -Dsonar.host.url=${SONARQUBE_URL} \
-                                      -Dsonar.login=${SONAR_TOKEN}
-                        """
+                        bat '''
+                        sonar-scanner -Dsonar.projectKey=MyProject -Dsonar.sources=. ^
+                                      -Dsonar.host.url=http://localhost:9000 ^
+                                      -Dsonar.token=%SONAR_TOKEN%
+                        '''
                     }
                 }
             }
@@ -34,7 +33,7 @@ pipeline {
             steps {
                 script {
                     timeout(time: 5, unit: 'MINUTES') {
-                        def qg = waitForQualityGate abortPipeline: true, credentialsId: SONARQUBE_CREDENTIALS
+                        def qg = waitForQualityGate abortPipeline: true, credentialsId: 'sonarqube-token-new'
                         if (qg.status != 'OK') {
                             error "Pipeline aborted due to quality gate failure: ${qg.status}"
                         }
@@ -50,8 +49,8 @@ pipeline {
                     sh """
                         git checkout -b ${branchName}
                         git push origin ${branchName}
-                        curl -u ${GITHUB_USER}:${GITHUB_TOKEN} -X POST -H "Content-Type: application/json" \
-                             -d '{\"title\": \"Automated PR\", \"head\": \"${branchName}\", \"base\": \"main\"}' \
+                        curl -u ${GITHUB_USER}:${GITHUB_TOKEN} -X POST -H "Content-Type: application/json" ^
+                             -d '{\"title\": \"Automated PR\", \"head\": \"${branchName}\", \"base\": \"main\"}' ^
                              https://api.github.com/repos/${GITHUB_REPO}/pulls
                     """
                 }
@@ -61,11 +60,11 @@ pipeline {
         stage('Deploy to Development VM') {
             steps {
                 withCredentials([string(credentialsId: 'deploy-password', variable: 'DEPLOY_PASS')]) {
-                    bat """
+                    bat '''
                     net use \\\\192.168.56.102\\wwwroot %DEPLOY_PASS% /USER:jenkinsuser
                     xcopy /E /I /Y * \\\\192.168.56.102\\wwwroot\\
                     net use /delete \\\\192.168.56.102\\wwwroot
-                    """
+                    '''
                 }
             }
         }
