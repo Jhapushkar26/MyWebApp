@@ -30,7 +30,7 @@ pipeline {
         script {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
-                    withSonarQubeEnv('sonarqube-token-new') { // Ensure SonarQube server is properly configured
+                    withSonarQubeEnv('SonarQube') { // Ensure SonarQube server is properly configured
                         def qualityGate = waitForQualityGate()
                         
                         if (qualityGate.status != 'OK') {
