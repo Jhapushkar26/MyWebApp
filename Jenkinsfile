@@ -30,7 +30,7 @@ pipeline {
         script {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
-                    withSonarQubeEnv('Jenkins_Sonarqube_Webhook') { // Ensure SonarQube server is properly configured
+                    withSonarQubeEnv('Jenkins_Sonar_Integration') { // Ensure SonarQube server is properly configured
                         def qualityGate = waitForQualityGate()
                         
                         if (qualityGate.status != 'OK') {
