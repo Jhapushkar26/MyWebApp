@@ -6,6 +6,8 @@ pipeline {
         GITHUB_USER = 'Jhapushkar26'
         GITHUB_TOKEN = credentials('github-username-and-pat')
         SONARQUBE_URL = 'http://localhost:9000'
+        SONARQUBE_CREDENTIALS = 'sonarqube-token-new'
+        SONAR_TOKEN = 'squ_c0676d830f3f77841a6c0caa86bde636ada40ceb'
     }
 
     stages {
@@ -17,15 +19,8 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonarqube-token-new', variable: 'SONAR_TOKEN')]) {
-                        bat """
-                        sonar-scanner -Dsonar.projectKey=MyProject ^
-                                      -Dsonar.sources=. ^
-                                      -Dsonar.host.url=${SONARQUBE_URL} ^
-                                      -Dsonar.login=%SONAR_TOKEN%
-                        """
-                    }
+               withSonarQubeEnv('SonarQube') {
+                    bat 'sonar-scanner -Dsonar.projectKey=MyProject -Dsonar.sources=. -Dsonar.host.url=http://localhost:9000'
                 }
             }
         }
