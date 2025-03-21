@@ -6,7 +6,7 @@ pipeline {
         GITHUB_USER = 'Jhapushkar26'
         GITHUB_TOKEN = credentials('github-username-and-pat')
         SONARQUBE_URL = 'http://localhost:9000'
-        SONARQUBE_CREDENTIALS = credentials('sonarqube-token-new') // Secure token usage
+        SONARQUBE_CREDENTIALS = credentials('sonarqube-token-new')
     }
 
     stages {
@@ -39,14 +39,14 @@ pipeline {
                 }
             }
             environment {
-                SONAR_TOKEN = credentials('sonarqube-token-new') // Secure token usage in Quality Gate
+                SONAR_TOKEN = credentials('sonarqube-token-new')
             }
         }
 
         stage('Deploy to Development VM') {
             steps {
                 bat """
-                    net use \\\\192.168.56.102\\wwwroot Pushkar123$ /USER:jenkinsuser
+                    net use \\\\192.168.56.102\\wwwroot Pushkar123\\$ /USER:jenkinsuser
                     xcopy /E /I /Y * \\\\192.168.56.102\\wwwroot\\
                     net use /delete \\\\192.168.56.102\\wwwroot
                 """
