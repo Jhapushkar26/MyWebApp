@@ -6,6 +6,7 @@ pipeline {
         GITHUB_USER = 'Jhapushkar26'
         GITHUB_TOKEN = credentials('github-username-and-pat')
         SONARQUBE_URL = 'http://localhost:9000'
+        SONARQUBE_CREDENTIALS = credentials('sonarqube-token-new') // Secure token usage
     }
 
     stages {
@@ -18,13 +19,12 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    withCredentials([string(credentialsId: 'sonarqube-token-new', variable: 'SONAR_TOKEN')]) {
-                        bat '''
-                        sonar-scanner -Dsonar.projectKey=MyProject -Dsonar.sources=. ^
-                                      -Dsonar.host.url=http://localhost:9000 ^
-                                      -Dsonar.token=%SONAR_TOKEN%
-                        '''
-                    }
+                    bat """
+                        sonar-scanner -Dsonar.projectKey=MyProject \\
+                                      -Dsonar.sources=. \\
+                                      -Dsonar.host.url=${SONARQUBE_URL} \\
+                                      -Dsonar.login=${SONARQUBE_CREDENTIALS}
+                    """
                 }
             }
         }
@@ -32,40 +32,24 @@ pipeline {
         stage('Quality Gate') {
             steps {
                 script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        def qg = waitForQualityGate abortPipeline: true, credentialsId: 'sonarqube-token-new'
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        }
+                    def qualityGate = waitForQualityGate()
+                    if (qualityGate.status != 'OK') {
+                        error "Quality Gate failed: ${qualityGate.status}"
                     }
                 }
             }
-        }
-
-        stage('Create Pull Request') {
-            steps {
-                script {
-                    def branchName = "feature-branch"
-                    sh """
-                        git checkout -b ${branchName}
-                        git push origin ${branchName}
-                        curl -u ${GITHUB_USER}:${GITHUB_TOKEN} -X POST -H "Content-Type: application/json" ^
-                             -d '{\"title\": \"Automated PR\", \"head\": \"${branchName}\", \"base\": \"main\"}' ^
-                             https://api.github.com/repos/${GITHUB_REPO}/pulls
-                    """
-                }
+            environment {
+                SONAR_TOKEN = credentials('sonarqube-token-new') // Secure token usage in Quality Gate
             }
         }
 
         stage('Deploy to Development VM') {
             steps {
-                withCredentials([string(credentialsId: 'deploy-password', variable: 'DEPLOY_PASS')]) {
-                    bat '''
-                    net use \\\\192.168.56.102\\wwwroot %DEPLOY_PASS% /USER:jenkinsuser
+                bat """
+                    net use \\\\192.168.56.102\\wwwroot Pushkar123$ /USER:jenkinsuser
                     xcopy /E /I /Y * \\\\192.168.56.102\\wwwroot\\
                     net use /delete \\\\192.168.56.102\\wwwroot
-                    '''
-                }
+                """
             }
         }
     }
