@@ -25,19 +25,21 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    script {
-                        bat """
-                        sonar-scanner -Dsonar.projectKey=MyProject \\
-                                      -Dsonar.sources=. \\
-                                      -Dsonar.host.url=${SONARQUBE_URL} \\
-                                      -Dsonar.login=${SONAR_TOKEN}
-                        """
-                    }
-                }
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            script {
+                bat """
+                sonar-scanner ^
+                    -Dsonar.projectKey=MyProject ^
+                    -Dsonar.sources=. ^
+                    -Dsonar.host.url=${SONARQUBE_URL} ^
+                    -Dsonar.login=${SONAR_TOKEN}
+                """
             }
         }
+    }
+}
+
 
         stage('Quality Gate Check') {
             steps {
