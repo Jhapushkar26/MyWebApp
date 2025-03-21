@@ -45,11 +45,7 @@ pipeline {
 
         stage('Deploy to Development VM') {
             steps {
-                bat """
-                    net use \\\\192.168.56.102\\wwwroot Pushkar123\\$ /USER:jenkinsuser
-                    xcopy /E /I /Y * \\\\192.168.56.102\\wwwroot\\
-                    net use /delete \\\\192.168.56.102\\wwwroot
-                """
+                bat 'net use \\\\192.168.56.102\\wwwroot Pushkar123$ /USER:jenkinsuser && xcopy /E /I /Y * \\\\192.168.56.102\\wwwroot\\ && net use /delete \\\\192.168.56.102\\wwwroot'
             }
         }
     }
