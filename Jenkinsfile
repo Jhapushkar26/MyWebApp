@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     environment {
+        BASE_BRANCH = 'main'
         GITHUB_REPO = 'Jhapushkar26/MyWebApp'
         GITHUB_USER = 'Jhapushkar26'
         GITHUB_TOKEN = credentials('github-username-and-pat')
         SONARQUBE_URL = 'http://localhost:9000'
         SONARQUBE_CREDENTIALS = 'sonarqube-token-new'
         SONAR_TOKEN = credentials('sonarqube-token-new')
-        BASE_BRANCH = 'main'
     }
 
     stages {
