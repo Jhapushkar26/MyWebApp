@@ -30,7 +30,7 @@ pipeline {
         script {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
-                    // Ensure SonarQube server is properly configured
+                    withSonarQubeEnv('SonarQube') { // Ensure SonarQube server is properly configured
                         def qualityGate = waitForQualityGate()
                         
                         if (qualityGate.status != 'OK') {
@@ -38,7 +38,7 @@ pipeline {
                         } else {
                             echo "✅ Quality Gate passed! Proceeding with deployment."
                         }
-                    
+                    }
                 } catch (Exception e) {
                     echo "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
                     echo "Retrying in 30 seconds..."
