@@ -30,18 +30,20 @@ pipeline {
         script {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
-                    def qualityGate = waitForQualityGate()
-                    
-                    if (qualityGate.status != 'OK') {
-                        error "❌ Quality Gate failed! Fix issues before deploying."
-                    } else {
-                        echo "✅ Quality Gate passed! Proceeding with deployment."
+                    withSonarQubeEnv('Jenkins_Sonarqube_Webhook') { // Ensure SonarQube server is properly configured
+                        def qualityGate = waitForQualityGate()
+                        
+                        if (qualityGate.status != 'OK') {
+                            error "❌ Quality Gate failed! Fix issues before deploying."
+                        } else {
+                            echo "✅ Quality Gate passed! Proceeding with deployment."
+                        }
                     }
                 } catch (Exception e) {
                     echo "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
                     echo "Retrying in 30 seconds..."
                     sleep(30)
-                    
+
                     def retryQualityGate = waitForQualityGate()
                     if (retryQualityGate.status != 'OK') {
                         error "❌ Quality Gate failed after retry! Fix issues before deploying."
@@ -53,6 +55,7 @@ pipeline {
         }
     }
 }
+
 
 
         stage('Create Pull Request') {
