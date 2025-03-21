@@ -21,18 +21,19 @@ pipeline {
         stage('SonarQube Analysis') {
     steps {
         withSonarQubeEnv('SonarQube') {
-            script {
+            withCredentials([string(credentialsId: 'sonarqube-token-new', variable: 'SONAR_AUTH_TOKEN')]) {
                 bat """
                 sonar-scanner ^
                     -Dsonar.projectKey=MyProject ^
                     -Dsonar.sources=. ^
                     -Dsonar.host.url=${SONARQUBE_URL} ^
-                    -Dsonar.login=${SONAR_TOKEN}
+                    -Dsonar.login=%SONAR_AUTH_TOKEN%
                 """
             }
         }
     }
 }
+
 
 
         stage('Quality Gate Check') {
