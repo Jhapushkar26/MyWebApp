@@ -26,15 +26,19 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            steps {
-                script {
-                    def qualityGate = waitForQualityGate()
-                    if (qualityGate.status != 'OK') {
-                        error "Quality Gate failed: ${qualityGate.status}"
-                    }
+    steps {
+        script {
+            timeout(time: 5, unit: 'MINUTES') {
+                def qualityGate = waitForQualityGate()
+                echo "Quality Gate Status: ${qualityGate.status}"
+                if (qualityGate.status != 'OK') {
+                    error "Quality Gate failed: ${qualityGate.status}"
                 }
             }
         }
+    }
+}
+
 
         stage('Deploy to Development VM') {
             steps {
