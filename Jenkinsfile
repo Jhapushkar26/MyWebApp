@@ -7,7 +7,7 @@ pipeline {
     stages {
         stage('Create Pull Request') {
             steps {
-                withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: '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', variable: 'GITHUB_TOKEN')]) {
                     script {
                         if (!env.BRANCH_NAME) {
                             error "❌ ERROR: BRANCH_NAME is not set! Ensure this pipeline is triggered by a branch."
