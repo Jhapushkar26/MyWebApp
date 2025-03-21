@@ -19,27 +19,27 @@ pipeline {
 
                         def response = sh(script: """
                         echo "✅ Checking Environment Variables"
-                        echo "BRANCH_NAME: $BRANCH_NAME"
-                        echo "BASE_BRANCH: $BASE_BRANCH"
-                        echo "REPO: $REPO"
+                        echo "BRANCH_NAME: \$BRANCH_NAME"
+                        echo "BASE_BRANCH: \$BASE_BRANCH"
+                        echo "REPO: \$REPO"
 
                         echo "📢 Sending PR creation request to GitHub API"
 
                         response=\$(curl -s -w "\\nHTTP_STATUS:%{http_code}" -X POST \\
-                            -H "Authorization: token $GITHUB_TOKEN" \\
-                            -H "Accept: application/vnd.github.v3+json" \\
+                            -H 'Authorization: token \$GITHUB_TOKEN' \\
+                            -H 'Accept: application/vnd.github.v3+json' \\
                             -d '{
-                                "title": "Automated PR from '"$BRANCH_NAME"'",
-                                "head": "'"$BRANCH_NAME"'",
-                                "base": "'"$BASE_BRANCH"'",
+                                "title": "Automated PR from '"\$BRANCH_NAME"'",
+                                "head": "'"\$BRANCH_NAME"'",
+                                "base": "'"\$BASE_BRANCH"'",
                                 "body": "This is an automated PR created by Jenkins."
                             }' \\
-                            "https://api.github.com/repos/$REPO/pulls")
+                            "https://api.github.com/repos/\$REPO/pulls")
 
                         http_status=\$(echo "\$response" | grep "HTTP_STATUS" | awk -F: '{print \$2}' | tr -d ' ')
                         api_response=\$(echo "\$response" | sed -e 's/HTTP_STATUS:[0-9]*//')
 
-                        echo "🔍 API Response: \$api_response"
+                        echo "🔍 Full API Response: \$api_response"
                         echo "ℹ️ HTTP Status: \$http_status"
 
                         if [ "\$http_status" -eq 422 ]; then
@@ -47,6 +47,7 @@ pipeline {
                             exit 0
                         elif [ "\$http_status" -ne 201 ]; then
                             echo "❌ ERROR: PR creation failed with status \$http_status"
+                            echo "🔍 API Response: \$api_response"
                             exit 1
                         else
                             echo "✅ Pull request created successfully!"
