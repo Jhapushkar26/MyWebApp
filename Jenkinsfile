@@ -26,19 +26,34 @@ pipeline {
         }
 
         stage('Quality Gate Check') {
-            steps {
-                script {
-                    timeout(time: 5, unit: 'MINUTES') {
-                        def qualityGate = waitForQualityGate()
-                        if (qualityGate.status != 'OK') {
-                            error "❌ Quality Gate failed! Fix issues before deploying."
-                        } else {
-                            echo "✅ Quality Gate passed! Proceeding with deployment."
-                        }
+    steps {
+        script {
+            timeout(time: 5, unit: 'MINUTES') {
+                try {
+                    def qualityGate = waitForQualityGate()
+                    
+                    if (qualityGate.status != 'OK') {
+                        error "❌ Quality Gate failed! Fix issues before deploying."
+                    } else {
+                        echo "✅ Quality Gate passed! Proceeding with deployment."
+                    }
+                } catch (Exception e) {
+                    echo "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
+                    echo "Retrying in 30 seconds..."
+                    sleep(30)
+                    
+                    def retryQualityGate = waitForQualityGate()
+                    if (retryQualityGate.status != 'OK') {
+                        error "❌ Quality Gate failed after retry! Fix issues before deploying."
+                    } else {
+                        echo "✅ Quality Gate passed after retry! Proceeding with deployment."
                     }
                 }
             }
         }
+    }
+}
+
 
         stage('Create Pull Request') {
             steps {
