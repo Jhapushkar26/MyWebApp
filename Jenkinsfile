@@ -12,6 +12,35 @@ pipeline {
     }
 
     stages {
+        
+
+        stage('Checkout Code') {
+            steps {
+                git branch: BASE_BRANCH, url: "https://github.com/${GITHUB_REPO}"
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    bat 'sonar-scanner -Dsonar.projectKey=MyProject -Dsonar.sources=. -Dsonar.host.url=${SONARQUBE_URL}'
+                }
+            }
+        }
+
+        stage('Quality Gate Check') {
+            steps {
+                script {
+                    def qualityGate = waitForQualityGate()
+                    if (qualityGate.status != 'OK') {
+                        error "❌ Quality Gate failed! Fix issues before deploying."
+                    } else {
+                        echo "✅ Quality Gate passed! Proceeding with deployment."
+                    }
+                }
+            }
+        }
+
         stage('Create Pull Request') {
             steps {
                 withCredentials([string(credentialsId: 'github-token', variable: 'GITHUB_TOKEN')]) {
@@ -42,33 +71,6 @@ pipeline {
                             echo "✅ Pull request created successfully!"
                         fi
                         """, returnStdout: true).trim()
-                    }
-                }
-            }
-        }
-
-        stage('Checkout Code') {
-            steps {
-                git branch: BASE_BRANCH, url: "https://github.com/${GITHUB_REPO}"
-            }
-        }
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    bat 'sonar-scanner -Dsonar.projectKey=MyProject -Dsonar.sources=. -Dsonar.host.url=${SONARQUBE_URL}'
-                }
-            }
-        }
-
-        stage('Quality Gate Check') {
-            steps {
-                script {
-                    def qualityGate = waitForQualityGate()
-                    if (qualityGate.status != 'OK') {
-                        error "❌ Quality Gate failed! Fix issues before deploying."
-                    } else {
-                        echo "✅ Quality Gate passed! Proceeding with deployment."
                     }
                 }
             }
