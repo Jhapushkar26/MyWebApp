@@ -13,14 +13,17 @@ pipeline {
                             error "❌ ERROR: BRANCH_NAME is not set! Ensure this pipeline is triggered by a branch."
                         }
 
-                        echo "ℹ️ Creating PR for branch: ${env.BRANCH_NAME}"
+                        echo "ℹ️ Branch Name: ${env.BRANCH_NAME}"
+                        echo "🔍 GitHub Repo: ${REPO}"
+                        echo "📢 Base Branch: ${BASE_BRANCH}"
 
                         def response = sh(script: """
-                        #!/bin/bash
-                        set -e  # Exit on error
-                        set -x  # Enable debugging
+                        echo "✅ Checking Environment Variables"
+                        echo "BRANCH_NAME: $BRANCH_NAME"
+                        echo "BASE_BRANCH: $BASE_BRANCH"
+                        echo "REPO: $REPO"
 
-                        echo "ℹ️ Checking if a pull request already exists for branch: $BRANCH_NAME"
+                        echo "📢 Sending PR creation request to GitHub API"
 
                         response=\$(curl -s -w "\\nHTTP_STATUS:%{http_code}" -X POST \\
                             -H "Authorization: token $GITHUB_TOKEN" \\
@@ -36,23 +39,21 @@ pipeline {
                         http_status=\$(echo "\$response" | grep "HTTP_STATUS" | awk -F: '{print \$2}' | tr -d ' ')
                         api_response=\$(echo "\$response" | sed -e 's/HTTP_STATUS:[0-9]*//')
 
-                        echo "🔍 Full GitHub API Response:"
-                        echo "\$api_response"
-
-                        echo "ℹ️ HTTP Status Code: \$http_status"
+                        echo "🔍 API Response: \$api_response"
+                        echo "ℹ️ HTTP Status: \$http_status"
 
                         if [ "\$http_status" -eq 422 ]; then
-                            echo "⚠️ A pull request already exists for this branch. Skipping PR creation."
+                            echo "⚠️ A PR already exists for this branch. Skipping..."
                             exit 0
                         elif [ "\$http_status" -ne 201 ]; then
-                            echo "❌ ERROR: Failed to create PR! HTTP Status: \$http_status"
+                            echo "❌ ERROR: PR creation failed with status \$http_status"
                             exit 1
                         else
                             echo "✅ Pull request created successfully!"
                         fi
                         """, returnStdout: true).trim()
 
-                        echo "📢 Final GitHub API Response:\n${response}"
+                        echo "📢 Final GitHub API Response: ${response}"
                     }
                 }
             }
