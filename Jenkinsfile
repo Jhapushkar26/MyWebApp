@@ -26,22 +26,14 @@ pipeline {
             }
 
             stage('Quality Gate Check') {
-        steps {
-            script {
-                timeout(time: 5, unit: 'MINUTES') {
-                    try {
-                        withSonarQubeEnv('SonarQube') { // Ensure SonarQube server is properly configured
-                            def qualityGate = waitForQualityGate()
-                            
-                            if (qualityGate.status != 'OK') {
-                                error "❌ Quality Gate failed! Fix issues before deploying."
-                            } else {
-                                echo "✅ Quality Gate passed! Proceeding with deployment."
-                            }
-                        }
-                    } catch (Exception e) {
-                        echo "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
-                        echo "Retrying in 30 seconds..."
+    steps {
+        script {
+            timeout(time: 5, unit: 'MINUTES') {
+                try {
+                    def qualityGate = waitForQualityGate()
+                    
+                    if (qualityGate.status != 'OK') {
+                        echo "❌ Initial Quality Gate failed. Retrying in 30 seconds..."
                         sleep(30)
 
                         def retryQualityGate = waitForQualityGate()
@@ -50,11 +42,17 @@ pipeline {
                         } else {
                             echo "✅ Quality Gate passed after retry! Proceeding with deployment."
                         }
+                    } else {
+                        echo "✅ Quality Gate passed! Proceeding with deployment."
                     }
+                } catch (Exception e) {
+                    error "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
                 }
             }
         }
     }
+}
+
 
 
 
