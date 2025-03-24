@@ -43,9 +43,9 @@ stage('Quality Gate Check') {
                         echo "🛠 Attempt ${retryCount + 1}: Sending request to SonarQube..."
                         echo "🌐 SonarQube API URL: ${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject"
 
-                        // Manual Base64 Encoding without using `getBytes()`
+                        // Encode authentication manually
                         def rawAuth = "${env.SONAR_TOKEN}:"
-                        def encodedAuth = rawAuth.toCharArray().collect { it as byte }.encodeBase64().toString()
+                        def encodedAuth = rawAuth.bytes.encodeBase64().toString()
 
                         def response
                         try {
@@ -111,6 +111,7 @@ stage('Quality Gate Check') {
         }
     }
 }
+
 
 
 
