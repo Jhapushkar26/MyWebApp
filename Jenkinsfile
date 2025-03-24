@@ -31,27 +31,30 @@ pipeline {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
                     echo "🔍 Checking Quality Gate status..."
-                    def qualityGateResult = httpRequest(
+                    
+                    def response = httpRequest(
                         acceptType: 'APPLICATION_JSON',
                         url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                        authentication: 'sonarqube-token-new'
+                        customHeaders: [[name: 'Authorization', value: "Bearer ${SONAR_TOKEN}"]],
+                        httpMode: 'GET'
                     )
 
-                    def jsonResponse = readJSON(text: qualityGateResult.content)
+                    def jsonResponse = readJSON(text: response.content)
                     def qualityGateStatus = jsonResponse.projectStatus.status
 
                     if (qualityGateStatus != 'OK') {
-                        echo "❌ Initial Quality Gate failed. Retrying in 30 seconds..."
+                        echo "❌ Quality Gate failed. Retrying in 30 seconds..."
                         sleep(30)
 
-                        // Retry logic
-                        qualityGateResult = httpRequest(
+                        // Retry once
+                        response = httpRequest(
                             acceptType: 'APPLICATION_JSON',
                             url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                            authentication: 'sonarqube-token-new'
+                            customHeaders: [[name: 'Authorization', value: "Bearer ${SONAR_TOKEN}"]],
+                            httpMode: 'GET'
                         )
 
-                        jsonResponse = readJSON(text: qualityGateResult.content)
+                        jsonResponse = readJSON(text: response.content)
                         qualityGateStatus = jsonResponse.projectStatus.status
 
                         if (qualityGateStatus != 'OK') {
@@ -69,6 +72,7 @@ pipeline {
         }
     }
 }
+
 
 
 
