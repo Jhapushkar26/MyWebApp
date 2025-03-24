@@ -26,37 +26,22 @@ pipeline {
         }
 
         stage('Quality Gate Check') {
-    steps {
-        script {
-            timeout(time: 5, unit: 'MINUTES') {
-                try {
-                    withSonarQubeEnv('SonarQube') { // Ensure SonarQube server is properly configured
-                        def qualityGate = waitForQualityGate()
-                        
-                        if (qualityGate.status != 'OK') {
+            steps {
+                script {
+                    timeout(time: 5, unit: 'MINUTES') {
+                        sleep(30) // Give SonarQube time to process analysis
+                        def response = sh(script: "curl -s -u admin:${SONAR_TOKEN} \"${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject\"", returnStdout: true).trim()
+                        def status = readJSON(text: response).projectStatus.status
+
+                        if (status != 'OK') {
                             error "❌ Quality Gate failed! Fix issues before deploying."
                         } else {
                             echo "✅ Quality Gate passed! Proceeding with deployment."
                         }
                     }
-                } catch (Exception e) {
-                    echo "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
-                    echo "Retrying in 30 seconds..."
-                    sleep(30)
-
-                    def retryQualityGate = waitForQualityGate()
-                    if (retryQualityGate.status != 'OK') {
-                        error "❌ Quality Gate failed after retry! Fix issues before deploying."
-                    } else {
-                        echo "✅ Quality Gate passed after retry! Proceeding with deployment."
-                    }
                 }
             }
         }
-    }
-}
-
-
 
         stage('Create Pull Request') {
             steps {
