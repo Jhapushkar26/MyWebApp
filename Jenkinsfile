@@ -5,6 +5,8 @@ pipeline {
         GITHUB_REPO = 'Jhapushkar26/MyWebApp'
         GITHUB_USER = 'Jhapushkar26'
         GITHUB_TOKEN = credentials('github-token5')
+        REPO = 'Jhapushkar26/MyWebApp'
+        BASE_BRANCH = 'main'
         CODECLIMATE_TEST_REPORTER_ID = credentials('code-climate-reporter-id')  // Stored in Jenkins Credentials
     }
 
@@ -69,7 +71,7 @@ pipeline {
 
         stage('Create Pull Request') {
             steps {
-                withCredentials([string(credentialsId: 'github-token5', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github-token-id', variable: 'GITHUB_TOKEN')]) {
                     script {
                         if (!env.BRANCH_NAME) {
                             error "❌ ERROR: BRANCH_NAME is not set! Ensure this pipeline is triggered by a branch."
@@ -121,6 +123,7 @@ pipeline {
                 }
             }
         }
+    
     
 
         stage('Deploy to Development VM') {
