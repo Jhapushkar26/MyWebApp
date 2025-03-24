@@ -13,7 +13,22 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: "https://github.com/${GITHUB_REPO}"
+                script {
+                    def branchName = env.BRANCH_NAME ?: 'main'  // Dynamically detect branch
+                    echo "🔍 Checking out branch: ${branchName}"
+                    git branch: branchName, url: "https://github.com/${GITHUB_REPO}"
+                }
+            }
+        }
+
+        stage('Verify Branch') {
+            steps {
+                script {
+                    sh '''
+                    echo "Current Git Branch: $(git rev-parse --abbrev-ref HEAD)"
+                    git status
+                    '''
+                }
             }
         }
 
@@ -21,10 +36,11 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "🚀 Running Code Climate Analysis"
                     docker run --rm \
                         -v "$(pwd)":/code \
                         -w /code \
-                        codeclimate/codeclimate analyze
+                        codeclimate/codeclimate analyze --debug
                     '''
                 }
             }
@@ -34,6 +50,7 @@ pipeline {
             steps {
                 script {
                     def result = sh(script: '''
+                    echo "📢 Running Code Climate Analysis with JSON output"
                     docker run --rm \
                         -v "$(pwd)":/code \
                         -w /code \
@@ -53,6 +70,7 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "📢 Formatting and Uploading Coverage Report"
                     docker run --rm \
                         -e CODECLIMATE_TEST_REPORTER_ID=${CODECLIMATE_TEST_REPORTER_ID} \
                         -v "$(pwd)":/code \
@@ -123,12 +141,11 @@ pipeline {
                 }
             }
         }
-    
-    
 
         stage('Deploy to Development VM') {
             steps {
                 bat '''
+                echo "📢 Deploying to Development VM"
                 net use \\\\192.168.56.102\\wwwroot Pushkar123$ /USER:jenkinsuser
                 xcopy /E /I /Y * \\\\192.168.56.102\\wwwroot\\
                 net use /delete \\\\192.168.56.102\\wwwroot
