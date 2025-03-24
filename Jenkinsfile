@@ -31,7 +31,7 @@ stage('Quality Gate Check') {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
                     echo "🔍 Checking Quality Gate status..."
-                    
+
                     def qualityGateStatus = ''
                     def maxRetries = 2
                     def retryCount = 0
@@ -40,16 +40,24 @@ stage('Quality Gate Check') {
                         echo "🛠 Attempt ${retryCount + 1}: Sending request to SonarQube..."
                         echo "🌐 SonarQube API URL: ${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject"
 
+                        def encodedAuth = "${env.SONAR_TOKEN}:".bytes.encodeBase64().toString()
                         def response
+
                         try {
                             response = httpRequest(
                                 acceptType: 'APPLICATION_JSON',
                                 url: "${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                                customHeaders: [[name: 'Authorization', value: "Bearer ${env.SONAR_TOKEN}"]],
+                                customHeaders: [[name: 'Authorization', value: "Basic ${encodedAuth}"]],
                                 httpMode: 'GET'
                             )
 
                             echo "✅ Response Code: ${response.status}"
+
+                            if (response.status != 200) {
+                                echo "❌ Unexpected Response Code: ${response.status}"
+                                throw new Exception("SonarQube API returned non-200 response.")
+                            }
+
                             echo "🔹 Raw Response Content: ${response.content}"
 
                         } catch (Exception httpError) {
@@ -98,6 +106,7 @@ stage('Quality Gate Check') {
         }
     }
 }
+
 
 
 
