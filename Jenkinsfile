@@ -25,45 +25,42 @@ pipeline {
                 }
             }
 
-            stage('Quality Gate Check') {
+stage('Quality Gate Check') {
     steps {
         script {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
                     echo "🔍 Checking Quality Gate status..."
-                    
-                    def response = httpRequest(
-                        acceptType: 'APPLICATION_JSON',
-                        url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                        customHeaders: [[name: 'Authorization', value: "Bearer ${SONAR_TOKEN}"]],
-                        httpMode: 'GET'
-                    )
+                    def qualityGateStatus = ''
+                    def maxRetries = 2  // Number of retries (initial attempt + 1 retry)
+                    def retryCount = 0
 
-                    def jsonResponse = readJSON(text: response.content)
-                    def qualityGateStatus = jsonResponse.projectStatus.status
-
-                    if (qualityGateStatus != 'OK') {
-                        echo "❌ Quality Gate failed. Retrying in 30 seconds..."
-                        sleep(30)
-
-                        // Retry once
-                        response = httpRequest(
+                    while (retryCount < maxRetries) {
+                        def response = httpRequest(
                             acceptType: 'APPLICATION_JSON',
-                            url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                            customHeaders: [[name: 'Authorization', value: "Bearer ${SONAR_TOKEN}"]],
+                            url: "${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
+                            customHeaders: [[name: 'Authorization', value: "Bearer ${env.SONAR_TOKEN}"]],
                             httpMode: 'GET'
                         )
 
-                        jsonResponse = readJSON(text: response.content)
+                        def jsonResponse = readJSON(text: response.content)
                         qualityGateStatus = jsonResponse.projectStatus.status
 
-                        if (qualityGateStatus != 'OK') {
-                            error "❌ Quality Gate failed after retry! Fix issues before deploying."
+                        if (qualityGateStatus == 'OK') {
+                            echo "✅ Quality Gate passed! Proceeding with deployment."
+                            break
                         } else {
-                            echo "✅ Quality Gate passed after retry! Proceeding with deployment."
+                            echo "❌ Quality Gate failed. Attempt ${retryCount + 1} of ${maxRetries}..."
+                            if (retryCount < maxRetries - 1) {
+                                echo "⏳ Retrying in 30 seconds..."
+                                sleep(30)
+                            }
                         }
-                    } else {
-                        echo "✅ Quality Gate passed! Proceeding with deployment."
+                        retryCount++
+                    }
+
+                    if (qualityGateStatus != 'OK') {
+                        error "❌ Quality Gate failed after ${maxRetries} attempts! Fix issues before deploying."
                     }
                 } catch (Exception e) {
                     error "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
@@ -72,6 +69,7 @@ pipeline {
         }
     }
 }
+
 
 
 
