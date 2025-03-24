@@ -38,7 +38,8 @@ stage('Quality Gate Check') {
 
                     while (retryCount < maxRetries) {
                         echo "🛠 Attempt ${retryCount + 1}: Sending request to SonarQube..."
-                        
+                        echo "🌐 SonarQube API URL: ${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject"
+
                         def response
                         try {
                             response = httpRequest(
@@ -49,7 +50,7 @@ stage('Quality Gate Check') {
                             )
 
                             echo "✅ Response Code: ${response.status}"
-                            echo "🔹 Response Content: ${response.content}"
+                            echo "🔹 Raw Response Content: ${response.content}"
 
                         } catch (Exception httpError) {
                             echo "⚠️ HTTP Request Failed: ${httpError.getMessage()}"
@@ -97,6 +98,7 @@ stage('Quality Gate Check') {
         }
     }
 }
+
 
 
 
