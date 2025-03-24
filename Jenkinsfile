@@ -30,14 +30,31 @@ pipeline {
         script {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
-                    def qualityGate = waitForQualityGate()
-                    
-                    if (qualityGate.status != 'OK') {
+                    echo "🔍 Checking Quality Gate status..."
+                    def qualityGateResult = httpRequest(
+                        acceptType: 'APPLICATION_JSON',
+                        url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
+                        authentication: 'sonarqube-token-new'
+                    )
+
+                    def jsonResponse = readJSON(text: qualityGateResult.content)
+                    def qualityGateStatus = jsonResponse.projectStatus.status
+
+                    if (qualityGateStatus != 'OK') {
                         echo "❌ Initial Quality Gate failed. Retrying in 30 seconds..."
                         sleep(30)
 
-                        def retryQualityGate = waitForQualityGate()
-                        if (retryQualityGate.status != 'OK') {
+                        // Retry logic
+                        qualityGateResult = httpRequest(
+                            acceptType: 'APPLICATION_JSON',
+                            url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
+                            authentication: 'sonarqube-token-new'
+                        )
+
+                        jsonResponse = readJSON(text: qualityGateResult.content)
+                        qualityGateStatus = jsonResponse.projectStatus.status
+
+                        if (qualityGateStatus != 'OK') {
                             error "❌ Quality Gate failed after retry! Fix issues before deploying."
                         } else {
                             echo "✅ Quality Gate passed after retry! Proceeding with deployment."
@@ -52,6 +69,7 @@ pipeline {
         }
     }
 }
+
 
 
 
