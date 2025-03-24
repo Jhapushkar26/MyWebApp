@@ -31,27 +31,47 @@ stage('Quality Gate Check') {
             timeout(time: 5, unit: 'MINUTES') {
                 try {
                     echo "🔍 Checking Quality Gate status..."
+                    
                     def qualityGateStatus = ''
                     def maxRetries = 2
                     def retryCount = 0
 
                     while (retryCount < maxRetries) {
                         echo "🛠 Attempt ${retryCount + 1}: Sending request to SonarQube..."
+                        
+                        def response
+                        try {
+                            response = httpRequest(
+                                acceptType: 'APPLICATION_JSON',
+                                url: "${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
+                                customHeaders: [[name: 'Authorization', value: "Bearer ${env.SONAR_TOKEN}"]],
+                                httpMode: 'GET'
+                            )
 
-                        def response = httpRequest(
-                            acceptType: 'APPLICATION_JSON',
-                            url: "${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                            customHeaders: [[name: 'Authorization', value: "Bearer ${env.SONAR_TOKEN}"]],
-                            httpMode: 'GET'
-                        )
+                            echo "✅ Response Code: ${response.status}"
+                            echo "🔹 Response Content: ${response.content}"
 
-                        echo "✅ Response Code: ${response.status}"
-                        echo "🔹 Response Content: ${response.content}"
+                        } catch (Exception httpError) {
+                            echo "⚠️ HTTP Request Failed: ${httpError.getMessage()}"
+                            if (retryCount < maxRetries - 1) {
+                                echo "⏳ Retrying in 30 seconds..."
+                                sleep(30)
+                                retryCount++
+                                continue
+                            } else {
+                                error "❌ SonarQube API request failed after ${maxRetries} attempts."
+                            }
+                        }
 
-                        def jsonResponse = readJSON(text: response.content)
-                        qualityGateStatus = jsonResponse.projectStatus.status
-
-                        echo "📌 Extracted Quality Gate Status: ${qualityGateStatus}"
+                        // Parse JSON response
+                        def jsonResponse
+                        try {
+                            jsonResponse = readJSON(text: response.content)
+                            qualityGateStatus = jsonResponse.projectStatus.status
+                            echo "📌 Extracted Quality Gate Status: ${qualityGateStatus}"
+                        } catch (Exception jsonError) {
+                            error "⚠️ JSON Parsing Failed: ${jsonError.getMessage()}"
+                        }
 
                         if (qualityGateStatus == 'OK') {
                             echo "✅ Quality Gate passed! Proceeding with deployment."
@@ -70,13 +90,14 @@ stage('Quality Gate Check') {
                         error "❌ Quality Gate failed after ${maxRetries} attempts! Fix issues before deploying."
                     }
                 } catch (Exception e) {
-                    echo "⚠️ Error Occurred: ${e.getMessage()}"
+                    echo "⚠️ Unexpected Error: ${e.getMessage()}"
                     error "❌ Pipeline Failed: ${e}"
                 }
             }
         }
     }
 }
+
 
 
 
