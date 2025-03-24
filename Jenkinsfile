@@ -67,8 +67,7 @@ pipeline {
             }
         }
 
-        
-    stages {
+        stages {
         stage('Create Pull Request') {
             steps {
                 withCredentials([string(credentialsId: 'github-token-id', variable: 'GITHUB_TOKEN')]) {
@@ -124,8 +123,6 @@ pipeline {
             }
         }
     }
-}
-
 
         stage('Deploy to Development VM') {
             steps {
