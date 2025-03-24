@@ -25,6 +25,8 @@ pipeline {
                 }
             }
 
+import java.util.Base64
+
 stage('Quality Gate Check') {
     steps {
         script {
@@ -40,9 +42,10 @@ stage('Quality Gate Check') {
                         echo "🛠 Attempt ${retryCount + 1}: Sending request to SonarQube..."
                         echo "🌐 SonarQube API URL: ${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject"
 
-                        def encodedAuth = "${env.SONAR_TOKEN}:".bytes.encodeBase64().toString()
-                        def response
+                        // Encode Sonar token using Java's Base64 Encoder
+                        def encodedAuth = Base64.getEncoder().encodeToString("${env.SONAR_TOKEN}:".getBytes("UTF-8"))
 
+                        def response
                         try {
                             response = httpRequest(
                                 acceptType: 'APPLICATION_JSON',
@@ -106,6 +109,7 @@ stage('Quality Gate Check') {
         }
     }
 }
+
 
 
 
