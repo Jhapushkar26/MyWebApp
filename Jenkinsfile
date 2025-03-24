@@ -29,14 +29,23 @@ pipeline {
             steps {
                 script {
                     timeout(time: 5, unit: 'MINUTES') {
-                        sleep(30) // Give SonarQube time to process analysis
-                        def response = sh(script: "curl -s -u admin:${SONAR_TOKEN} \"${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject\"", returnStdout: true).trim()
-                        def status = readJSON(text: response).projectStatus.status
+                        try {
+                            def qualityGateResult = httpRequest \
+                                acceptType: 'APPLICATION_JSON', \
+                                url: "${SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject", \
+                                authentication: 'sonarqube-token-new'
 
-                        if (status != 'OK') {
-                            error "❌ Quality Gate failed! Fix issues before deploying."
-                        } else {
-                            echo "✅ Quality Gate passed! Proceeding with deployment."
+                            def jsonResponse = readJSON(text: qualityGateResult.content)
+                            def qualityGateStatus = jsonResponse.projectStatus.status
+
+                            if (qualityGateStatus != 'OK') {
+                                error "❌ Quality Gate failed! Fix issues before deploying."
+                            } else {
+                                echo "✅ Quality Gate passed! Proceeding with deployment."
+                            }
+                        } catch (Exception e) {
+                            echo "⚠️ Error while checking Quality Gate: ${e.getMessage()}"
+                            error "❌ Quality Gate check failed due to an error."
                         }
                     }
                 }
