@@ -4,7 +4,7 @@ pipeline {
     environment {
         GITHUB_REPO = 'Jhapushkar26/MyWebApp'
         GITHUB_USER = 'Jhapushkar26'
-        GITHUB_TOKEN = credentials('github-username-and-pat')
+        GITHUB_TOKEN = credentials('github-token4')
         CODECLIMATE_TEST_REPORTER_ID = credentials('code-climate-reporter-id')  // Stored in Jenkins Credentials
     }
 
@@ -69,7 +69,7 @@ pipeline {
 
         stage('Create Pull Request') {
             steps {
-                withCredentials([string(credentialsId: 'github-username-and-pat', variable: 'GITHUB_TOKEN')]) {
+                withCredentials([string(credentialsId: 'github-token4', variable: 'GITHUB_TOKEN')]) {
                     script {
                         def branchName = env.GIT_BRANCH.replaceFirst('origin/', '')
                         if (!branchName) {
