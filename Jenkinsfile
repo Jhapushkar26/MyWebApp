@@ -1,3 +1,5 @@
+import java.util.Base64
+
 pipeline {
         agent any
 
@@ -25,7 +27,6 @@ pipeline {
                 }
             }
 
-import java.util.Base64
 
 stage('Quality Gate Check') {
     steps {
