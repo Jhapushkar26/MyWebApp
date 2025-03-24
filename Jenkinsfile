@@ -67,12 +67,7 @@ pipeline {
             }
         }
 
-        pipeline {
-    agent any
-    environment {
-        REPO = 'Jhapushkar26/MyWebApp'
-        BASE_BRANCH = 'main'
-    }
+        
     stages {
         stage('Create Pull Request') {
             steps {
