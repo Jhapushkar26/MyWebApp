@@ -38,21 +38,20 @@ stage('Quality Gate Check') {
                     def qualityGateStatus = ''
                     def maxRetries = 2
                     def retryCount = 0
+                    
+                    // Get pre-encoded token from Jenkins credentials
+                    def sonarAuthToken = credentials('SONAR_AUTH_TOKEN')
 
                     while (retryCount < maxRetries) {
                         echo "🛠 Attempt ${retryCount + 1}: Sending request to SonarQube..."
                         echo "🌐 SonarQube API URL: ${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject"
-
-                        // Encode authentication manually
-                        def rawAuth = "${env.SONAR_TOKEN}:"
-                        def encodedAuth = rawAuth.bytes.encodeBase64().toString()
 
                         def response
                         try {
                             response = httpRequest(
                                 acceptType: 'APPLICATION_JSON',
                                 url: "${env.SONARQUBE_URL}/api/qualitygates/project_status?projectKey=MyProject",
-                                customHeaders: [[name: 'Authorization', value: "Basic ${encodedAuth}"]],
+                                customHeaders: [[name: 'Authorization', value: "Basic ${sonarAuthToken}"]],
                                 httpMode: 'GET'
                             )
 
@@ -111,6 +110,7 @@ stage('Quality Gate Check') {
         }
     }
 }
+
 
 
 
