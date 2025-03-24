@@ -67,18 +67,18 @@ pipeline {
                         echo "📢 Base Branch: ${BASE_BRANCH}"
 
                         def prResponse = sh(script: """
-                        response=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X POST \
-                            -H "Authorization: Bearer $GITHUB_TOKEN" \
-                            -H "Accept: application/vnd.github.v3+json" \
-                            -d '{"title": "Automated PR from '"$branchName"'","head": "'"$branchName"'","base": "'"$BASE_BRANCH"'","body": "This is an automated PR created by Jenkins."}' \
-                            "https://api.github.com/repos/$GITHUB_REPO/pulls")
+                        response=\$(curl -s -w \"\\nHTTP_STATUS:%{http_code}\" -X POST \
+                            -H \"Authorization: Bearer \$GITHUB_TOKEN\" \
+                            -H \"Accept: application/vnd.github.v3+json\" \
+                            -d '{"title": "Automated PR from '"\$branchName"'","head": "'"\$branchName"'","base": "'"\$BASE_BRANCH"'","body": "This is an automated PR created by Jenkins."}' \
+                            "https://api.github.com/repos/\$GITHUB_REPO/pulls")
 
-                        http_status=$(echo "$response" | grep "HTTP_STATUS" | awk -F: '{print $2}' | tr -d ' ')
+                        http_status=\$(echo "\$response" | grep "HTTP_STATUS" | awk -F: '{print \$2}' | tr -d ' ')
 
-                        if [ "$http_status" -eq 422 ]; then
+                        if [ "\$http_status" -eq 422 ]; then
                             echo "⚠️ A PR already exists for this branch. Skipping..."
-                        elif [ "$http_status" -ne 201 ]; then
-                            echo "❌ ERROR: PR creation failed with status $http_status"
+                        elif [ "\$http_status" -ne 201 ]; then
+                            echo "❌ ERROR: PR creation failed with status \$http_status"
                             exit 1
                         else
                             echo "✅ Pull request created successfully!"
