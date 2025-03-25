@@ -47,24 +47,25 @@ pipeline {
         }
 
         stage('Code Quality Check') {
-            steps {
-                script {
-                    def result = sh(script: '''
-                    echo "📢 Running Code Climate Analysis with JSON output"
-                    docker run --rm \
-                        -v "$(pwd)":/code \
-                        -w /code \
-                        codeclimate/codeclimate analyze --json | tee codeclimate-report.json
-                    ''', returnStdout: true).trim()
+    steps {
+        script {
+            def result = sh(script: '''
+            echo "📢 Running Code Climate Analysis for HTML with JSON output"
+            docker run --rm \
+                -v "$(pwd)":/code \
+                -w /code \
+                codeclimate/codeclimate analyze index.html --json | tee codeclimate-report.json
+            ''', returnStdout: true).trim()
 
-                    if (result.contains('"severity": "critical"')) {
-                        error "❌ Code Climate found critical issues! Fix them before proceeding."
-                    } else {
-                        echo "✅ Code Climate analysis passed!"
-                    }
-                }
+            if (result.contains('"severity": "critical"') || result.contains('"severity": "major"')) {
+                error "❌ Code Climate found critical or major HTML issues! Fix them before proceeding."
+            } else {
+                echo "✅ Code Climate analysis passed!"
             }
         }
+    }
+}
+
 
         stage('Upload Coverage Report to Code Climate') {
             steps {
