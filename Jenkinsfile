@@ -11,6 +11,19 @@ pipeline {
     }
 
     stages {
+
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    echo "📦 Installing Required Linters"
+                    sh '''
+                    npm install -g htmlhint stylelint eslint
+                    '''
+                }
+            }
+        }
+
+
         stage('Checkout Code') {
             steps {
                 script {
