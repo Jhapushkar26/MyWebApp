@@ -60,35 +60,29 @@ pipeline {
         script {
             echo "📢 Checking for Linter Errors"
 
-            // Debugging: Display contents of the reports before checking errors
-            echo "🔍 Checking HTML Lint Report:"
-            sh "cat htmlhint-report.json || echo '⚠️ htmlhint-report.json not found!'"
+            // Delete old reports (if they exist)
+            sh "rm -f htmlhint-report.json stylelint-report.json eslint-report.json"
 
-            echo "🔍 Checking CSS Lint Report:"
-            sh "cat stylelint-report.json || echo '⚠️ stylelint-report.json not found!'"
+            // Run linters
+            sh "htmlhint index.html --format=json > htmlhint-report.json"
+            sh "stylelint '*.css' --formatter json > stylelint-report.json"
+            sh "eslint '*.js' -f json > eslint-report.json"
 
-            echo "🔍 Checking JS Lint Report:"
-            sh "cat eslint-report.json || echo '⚠️ eslint-report.json not found!'"
+            // Print full reports for debugging
+            echo "📜 Full HTML Lint Report:"
+            sh "cat htmlhint-report.json"
 
-            // Check for linting errors and capture both exit status and output
-            def htmlLintOutput = sh(script: "grep 'error' htmlhint-report.json || true", returnStdout: true).trim()
-            def cssLintOutput = sh(script: "grep 'error' stylelint-report.json || true", returnStdout: true).trim()
-            def jsLintOutput = sh(script: "grep 'error' eslint-report.json || true", returnStdout: true).trim()
+            echo "📜 Full CSS Lint Report:"
+            sh "cat stylelint-report.json"
 
+            echo "📜 Full JS Lint Report:"
+            sh "cat eslint-report.json"
+
+            // Check for errors
             def htmlLintErrors = sh(script: "grep 'error' htmlhint-report.json || true", returnStatus: true)
             def cssLintErrors = sh(script: "grep 'error' stylelint-report.json || true", returnStatus: true)
             def jsLintErrors = sh(script: "grep 'error' eslint-report.json || true", returnStatus: true)
 
-            // Debugging: Print captured outputs and exit statuses
-            echo "📄 HTML Lint Errors Output: ${htmlLintOutput}"
-            echo "📄 CSS Lint Errors Output: ${cssLintOutput}"
-            echo "📄 JS Lint Errors Output: ${jsLintOutput}"
-            
-            echo "📌 HTML Lint Exit Status: ${htmlLintErrors}"
-            echo "📌 CSS Lint Exit Status: ${cssLintErrors}"
-            echo "📌 JS Lint Exit Status: ${jsLintErrors}"
-
-            // If any linter reports an error, fail the build
             if (htmlLintErrors == 0 || cssLintErrors == 0 || jsLintErrors == 0) {
                 error "❌ Linting errors found! Fix them before proceeding."
             } else {
@@ -97,6 +91,7 @@ pipeline {
         }
     }
 }
+
 
     }
 }
