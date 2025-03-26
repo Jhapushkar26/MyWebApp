@@ -56,28 +56,31 @@ pipeline {
         }
 
         stage('Code Quality Check') {
-    steps {
-        script {
-            echo "📢 Checking for Linter Errors"
+            steps {
+                script {
+                    echo "📢 Checking for Linter Errors"
 
-            // Navigate to the project directory
-            sh "cd C:/Users/pushkar.jha/Documents/MyWebApp && htmlhint index.html --format=json > htmlhint-report.json"
+                    // Ensure the working directory is correct
+                    sh "pwd"
+                    sh "ls -l"
 
-            // Debugging: Check if the report is created
-            sh "ls -l C:/Users/pushkar.jha/Documents/MyWebApp/htmlhint-report.json"
-            sh "cat C:/Users/pushkar.jha/Documents/MyWebApp/htmlhint-report.json"
+                    // Run HTMLHint and log output
+                    sh "htmlhint index.html --format=json > htmlhint-report.json || echo '⚠️ htmlhint failed!'"
+                    sh "ls -l htmlhint-report.json || echo '⚠️ htmlhint-report.json not found!'"
+                    sh "cat htmlhint-report.json || echo '⚠️ No output in htmlhint-report.json'"
 
-            // Checking for errors
-            def htmlLintErrors = sh(script: "grep 'error' C:/Users/pushkar.jha/Documents/MyWebApp/htmlhint-report.json || true", returnStatus: true)
+                    // Check if errors exist
+                    def htmlLintErrors = sh(script: "grep 'error' htmlhint-report.json || true", returnStatus: true)
 
-            if (htmlLintErrors == 0) {
-                error "❌ Linting errors found! Fix them before proceeding."
-            } else {
-                echo "✅ Code Linting Passed!"
+                    if (htmlLintErrors == 0) {
+                        error "❌ Linting errors found! Fix them before proceeding."
+                    } else {
+                        echo "✅ Code Linting Passed!"
+                    }
+                }
             }
-        }
-    }
 }
+
 
 
 
