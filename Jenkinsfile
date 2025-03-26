@@ -60,6 +60,11 @@ pipeline {
         script {
             echo "📢 Checking for Linter Errors"
 
+            sh "which htmlhint || echo '⚠️ htmlhint not found!'"
+            sh "which stylelint || echo '⚠️ stylelint not found!'"
+            sh "which eslint || echo '⚠️ eslint not found!'"
+
+
             // 🗑 Delete old reports to avoid stale results
             sh "rm -f htmlhint-report.json stylelint-report.json eslint-report.json"
 
