@@ -60,30 +60,30 @@ pipeline {
         script {
             echo "📢 Checking for Linter Errors"
 
-            // Delete old reports (if they exist)
+            // 🗑 Delete old reports to avoid stale results
             sh "rm -f htmlhint-report.json stylelint-report.json eslint-report.json"
 
-            // Run linters
-            sh "htmlhint index.html --format=json > htmlhint-report.json"
+            // 📊 Run linters and generate fresh reports
+            sh "htmlhint index.html --config .htmlhintrc --format=json > htmlhint-report.json"
             sh "stylelint '*.css' --formatter json > stylelint-report.json"
             sh "eslint '*.js' -f json > eslint-report.json"
 
-            // Print full reports for debugging
-            echo "📜 Full HTML Lint Report:"
-            sh "cat htmlhint-report.json"
+            // 📝 Print reports for debugging
+            echo "📜 HTML Lint Report:"
+            sh "cat htmlhint-report.json || echo '⚠️ No report generated!'"
 
-            echo "📜 Full CSS Lint Report:"
-            sh "cat stylelint-report.json"
+            echo "📜 CSS Lint Report:"
+            sh "cat stylelint-report.json || echo '⚠️ No report generated!'"
 
-            echo "📜 Full JS Lint Report:"
-            sh "cat eslint-report.json"
+            echo "📜 JS Lint Report:"
+            sh "cat eslint-report.json || echo '⚠️ No report generated!'"
 
-            // Check for errors
-            def htmlLintErrors = sh(script: "grep 'error' htmlhint-report.json || true", returnStatus: true)
-            def cssLintErrors = sh(script: "grep 'error' stylelint-report.json || true", returnStatus: true)
-            def jsLintErrors = sh(script: "grep 'error' eslint-report.json || true", returnStatus: true)
+            // ✅ Check for errors
+            def htmlLintErrors = sh(script: "jq 'length' htmlhint-report.json", returnStdout: true).trim()
+            def cssLintErrors = sh(script: "jq 'length' stylelint-report.json", returnStdout: true).trim()
+            def jsLintErrors = sh(script: "jq 'length' eslint-report.json", returnStdout: true).trim()
 
-            if (htmlLintErrors == 0 || cssLintErrors == 0 || jsLintErrors == 0) {
+            if (htmlLintErrors != "0" || cssLintErrors != "0" || jsLintErrors != "0") {
                 error "❌ Linting errors found! Fix them before proceeding."
             } else {
                 echo "✅ Code Linting Passed!"
@@ -91,6 +91,7 @@ pipeline {
         }
     }
 }
+
 
 
     }
