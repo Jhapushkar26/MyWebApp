@@ -47,11 +47,11 @@ pipeline {
             
             withCredentials([string(credentialsId: 'github-token5', variable: 'GITHUB_TOKEN')]) {
                 for (int i = 0; i < maxRetries; i++) {
-                    status = sh(script: """
+                    status = sh(script: '''
                         curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
                         "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
-                        '[.workflow_runs[] | select(.head_branch=="${env.BRANCH_NAME"})] | first | .conclusion'
-                    """, returnStdout: true).trim()
+                        "[.workflow_runs[] | select(.head_branch==\"${env.BRANCH_NAME}\")] | first | .conclusion"
+                    ''', returnStdout: true).trim()
 
                     if (status == "success") {
                         echo "✅ GitHub Actions passed. Proceeding to create PR."
@@ -71,6 +71,7 @@ pipeline {
         }
     }
 }
+
 
 
 
