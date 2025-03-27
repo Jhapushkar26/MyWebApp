@@ -37,27 +37,28 @@ pipeline {
         }
 
         stage('Wait for GitHub Actions to Complete') {
-            steps {
-                script {
-                    echo "⏳ Waiting for GitHub Actions to complete..."
-                    sleep(time: 60, unit: 'SECONDS')
+    steps {
+        script {
+            echo "⏳ Waiting for GitHub Actions to complete..."
+            sleep(time: 60, unit: 'SECONDS')
 
-                    withCredentials([string(credentialsId: 'github-token5', variable: 'GITHUB_TOKEN')]) {
-                        def status = sh(script: """
-                        curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-                        "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
-                        '.workflow_runs[] | select(.head_branch=="${env.BRANCH_NAME}") | .conclusion' | head -n 1
-                        """, returnStdout: true).trim()
+            withCredentials([string(credentialsId: 'github-token5', variable: 'GITHUB_TOKEN')]) {
+                def status = sh(script: '''
+                curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
+                '.workflow_runs[] | select(.head_branch=="'${env.BRANCH_NAME}'") | .conclusion' | head -n 1
+                ''', returnStdout: true).trim()
 
-                        if (status != "success") {
-                            error "❌ GitHub Actions failed. Fix issues before creating PR."
-                        } else {
-                            echo "✅ GitHub Actions passed. Proceeding to create PR."
-                        }
-                    }
+                if (status != "success") {
+                    error "❌ GitHub Actions failed. Fix issues before creating PR."
+                } else {
+                    echo "✅ GitHub Actions passed. Proceeding to create PR."
                 }
             }
         }
+    }
+}
+
 
         stage('Create Pull Request') {
             steps {
@@ -85,3 +86,4 @@ pipeline {
         }
     }
 }
+                                                                                                                                                                                                                            
