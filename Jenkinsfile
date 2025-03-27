@@ -7,82 +7,77 @@ pipeline {
         GITHUB_TOKEN = credentials('github-token5')
         REPO = 'Jhapushkar26/MyWebApp'
         BASE_BRANCH = 'main'
-        CODECLIMATE_TEST_REPORTER_ID = credentials('code-climate-reporter-id')
     }
 
     stages {
-        stage('Install Dependencies') {
+
+        stage('Checkout Feature Branch') {
             steps {
                 script {
-                    echo "📦 Installing Required Linters"
-                    sh '''
-                    npm install -g htmlhint stylelint eslint
-                    '''
+                    if (!env.BRANCH_NAME) {
+                        error "❌ ERROR: BRANCH_NAME is not set! Ensure this pipeline is triggered for a feature branch."
+                    }
+                    echo "🔍 Checking out branch: ${env.BRANCH_NAME}"
+                    git branch: env.BRANCH_NAME, url: "https://github.com/${GITHUB_REPO}"
                 }
             }
         }
 
-        stage('Lint HTML Files') {
+        stage('Trigger GitHub Actions for Code Quality Check') {
             steps {
                 script {
-                    echo "🔍 Running HTMLHint"
-                    sh '''
-                    htmlhint "**/*.html" --format=json > htmlhint-report.json || true
-                    '''
+                    echo "🚀 Triggering GitHub Actions for branch: ${env.BRANCH_NAME}"
+                    sh """
+                    curl -X POST -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github.v3+json" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/code-quality.yml/dispatches" \
+                    -d '{"ref":"${env.BRANCH_NAME}"}'
+                    """
                 }
             }
         }
 
-        stage('Lint CSS Files') {
+        stage('Wait for GitHub Actions to Complete') {
             steps {
                 script {
-                    echo "🔍 Running Stylelint"
-                    sh '''
-                    stylelint "**/*.css" --formatter json > stylelint-report.json || true
-                    '''
-                }
-            }
-        }
+                    echo "⏳ Waiting for GitHub Actions to complete..."
+                    sleep(time: 60, unit: 'SECONDS')
 
-        stage('Lint JavaScript Files') {
-            steps {
-                script {
-                    echo "🔍 Running ESLint"
-                    sh '''
-                    eslint "**/*.js" -f json -o eslint-report.json || true
-                    '''
-                }
-            }
-        }
+                    def status = sh(script: """
+                    curl -s -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+                    "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
+                    '.workflow_runs[] | select(.head_branch=="${env.BRANCH_NAME}") | .conclusion' | head -1
+                    """, returnStdout: true).trim()
 
-        stage('Code Quality Check') {
-            steps {
-                script {
-                    echo "📢 Checking for Linter Errors"
-
-                    // Ensure the working directory is correct
-                    sh "pwd"
-                    sh "ls -l"
-
-                    // Run HTMLHint and log output
-                    sh "htmlhint index.html --format=json > htmlhint-report.json || echo '⚠️ htmlhint failed!'"
-                    sh "ls -l htmlhint-report.json || echo '⚠️ htmlhint-report.json not found!'"
-                    sh "cat htmlhint-report.json || echo '⚠️ No output in htmlhint-report.json'"
-
-                    // Check if errors exist
-                    def htmlLintErrors = sh(script: "grep 'error' htmlhint-report.json || true", returnStatus: true)
-
-                    if (htmlLintErrors == 0) {
-                        error "❌ Linting errors found! Fix them before proceeding."
+                    if (status != "success") {
+                        error "❌ GitHub Actions failed. Fix issues before creating PR."
                     } else {
-                        echo "✅ Code Linting Passed!"
+                        echo "✅ GitHub Actions passed. Proceeding to create PR."
                     }
                 }
             }
-}
+        }
 
+        stage('Create Pull Request') {
+            steps {
+                script {
+                    echo "📢 Creating Pull Request from ${env.BRANCH_NAME} to ${BASE_BRANCH}"
 
+                    def response = sh(script: """
+                    curl -s -w "\\nHTTP_STATUS:%{http_code}" -X POST \
+                    -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+                    -H "Accept: application/vnd.github.v3+json" \
+                    -d '{
+                        "title": "Automated PR from ${env.BRANCH_NAME}",
+                        "head": "${env.BRANCH_NAME}",
+                        "base": "${BASE_BRANCH}",
+                        "body": "This PR was created automatically after passing quality checks."
+                    }' \
+                    "https://api.github.com/repos/${REPO}/pulls"
+                    """, returnStdout: true).trim()
 
-
+                    echo "📢 GitHub API Response: ${response}"
+                }
+            }
+        }
     }
 }
