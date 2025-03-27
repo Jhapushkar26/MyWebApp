@@ -40,18 +40,27 @@ pipeline {
     steps {
         script {
             echo "⏳ Waiting for GitHub Actions to complete..."
-
-            def maxRetries = 10  // 🔄 Retry up to 10 times (2.5 min total)
-            def retryDelay = 15  // ⏳ Wait 15 seconds between retries
+            def maxRetries = 10
+            def retryDelay = 15
             def status = ""
-            
+
             withCredentials([string(credentialsId: 'github-token5', variable: 'GITHUB_TOKEN')]) {
                 for (int i = 0; i < maxRetries; i++) {
-                    status = sh(script: '''
+                    echo "🔄 Checking GitHub Actions status... (Attempt ${i + 1})"
+
+                    def response = sh(script: '''
                         curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-                        "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
+                        "https://api.github.com/repos/Jhapushkar26/MyWebApp/actions/runs"
+                    ''', returnStdout: true).trim()
+
+                    echo "🔍 GitHub API Response: ${response}" // DEBUGGING LOG
+
+                    status = sh(script: '''
+                        echo '${response}' | jq -r \
                         "[.workflow_runs[] | select(.head_branch==\"${env.BRANCH_NAME}\")] | first | .conclusion"
                     ''', returnStdout: true).trim()
+
+                    echo "📢 GitHub Actions Status: ${status}"
 
                     if (status == "success") {
                         echo "✅ GitHub Actions passed. Proceeding to create PR."
@@ -71,6 +80,7 @@ pipeline {
         }
     }
 }
+
 
 
 
