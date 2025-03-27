@@ -1,0 +1,26 @@
+name: Code Quality Check
+
+on:
+  push:
+    branches:
+      - 'feature-*'
+
+jobs:
+  lint-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: npm install -g htmlhint stylelint eslint
+
+      - name: Lint HTML
+        run: htmlhint "**/*.html" || exit 1
+
+      - name: Lint CSS
+        run: stylelint "**/*.css" || exit 1
+
+      - name: Lint JavaScript
+        run: eslint "**/*.js" || exit 1
