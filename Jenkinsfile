@@ -40,24 +40,38 @@ pipeline {
     steps {
         script {
             echo "⏳ Waiting for GitHub Actions to complete..."
-            sleep(time: 60, unit: 'SECONDS')
 
+            def maxRetries = 10  // 🔄 Retry up to 10 times (2.5 min total)
+            def retryDelay = 15  // ⏳ Wait 15 seconds between retries
+            def status = ""
+            
             withCredentials([string(credentialsId: 'github-token5', variable: 'GITHUB_TOKEN')]) {
-                def status = sh(script: '''
-                curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-                "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
-                '.workflow_runs[] | select(.head_branch=="'${env.BRANCH_NAME}'") | .conclusion' | head -n 1
-                ''', returnStdout: true).trim()
+                for (int i = 0; i < maxRetries; i++) {
+                    status = sh(script: """
+                        curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+                        "https://api.github.com/repos/${GITHUB_REPO}/actions/runs" | jq -r \
+                        '[.workflow_runs[] | select(.head_branch=="${env.BRANCH_NAME"})] | first | .conclusion'
+                    """, returnStdout: true).trim()
 
-                if (status != "success") {
-                    error "❌ GitHub Actions failed. Fix issues before creating PR."
-                } else {
-                    echo "✅ GitHub Actions passed. Proceeding to create PR."
+                    if (status == "success") {
+                        echo "✅ GitHub Actions passed. Proceeding to create PR."
+                        break
+                    } else if (status == "failure") {
+                        error "❌ GitHub Actions failed. Fix issues before creating PR."
+                    } else {
+                        echo "⏳ Workflow not completed yet. Retrying in ${retryDelay}s..."
+                        sleep(time: retryDelay, unit: 'SECONDS')
+                    }
                 }
+            }
+
+            if (status != "success") {
+                error "❌ GitHub Actions did not complete successfully after multiple retries."
             }
         }
     }
 }
+
 
 
         stage('Create Pull Request') {
